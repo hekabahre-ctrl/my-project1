@@ -14,7 +14,6 @@
     </style>
 </head>
 <body class="bg-gray-50 text-slate-900">
-
     <!-- Toast Message -->
     <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-[2000] bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl hidden animate-bounce text-center"></div>
 
@@ -36,13 +35,11 @@
                 <!-- Will be populated by JS -->
             </div>
         </nav>
-
         <!-- Main Content -->
         <main class="flex-1 p-6 md:p-10 overflow-y-auto" id="main-content">
             <!-- Content injected here -->
         </main>
     </div>
-
     <!-- Login Modal -->
     <div id="login-modal" class="fixed inset-0 z-[500] bg-black/70 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md p-8 rounded-[3rem] shadow-2xl">
@@ -66,7 +63,6 @@
             </form>
         </div>
     </div>
-
     <!-- Admin Modal -->
     <div id="admin-modal" class="fixed inset-0 z-[600] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-2xl p-8 rounded-[3rem] shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -80,13 +76,11 @@
             </div>
         </div>
     </div>
-
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-
         // --- Configuration ---
         const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
         const app = initializeApp(firebaseConfig);
@@ -98,7 +92,6 @@
             { name: "إبراهيم حسن عبدالرحمن", phone: "01285304740" },
             { name: "حسن عبدالرحمن اسماعيل", phone: "01110922801" }
         ];
-
         let currentUser = null;
         let coursesData = {};
         let activeView = 'home';
@@ -339,3 +332,4 @@
 </body>
 
 </html>
+
