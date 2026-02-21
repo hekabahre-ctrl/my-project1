@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hassan Bahre Platform | منصة المستر</title>
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; }
+        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        iframe { border-radius: 1.5rem; }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-900">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 z-[1000] bg-blue-600 flex items-center justify-center text-white text-3xl font-black">
+        متخفش هتقفل... ⏳
+    </div>
+
+    <!-- Toast Message -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-[2000] bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl hidden animate-bounce text-center"></div>
+
+    <div id="app" class="min-h-screen flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <nav class="w-full md:w-64 bg-slate-950 text-white p-6 flex flex-col shadow-2xl">
+            <div class="mb-10 text-center">
+                <h1 class="text-2xl font-black text-blue-500 italic">H. BAHRE</h1>
+                <p class="text-[10px] text-slate-400 mt-2">المستر بيحبك ❤️</p>
+            </div>
+            <div class="flex flex-col gap-2 flex-grow" id="nav-links">
+                <button onclick="navigateTo('home')" class="nav-btn p-4 rounded-2xl text-right transition-all hover:bg-slate-900" id="btn-home">🏠 الرئيسية</button>
+                <button onclick="navigateTo('courses')" class="nav-btn p-4 rounded-2xl text-right transition-all hover:bg-slate-900" id="btn-courses">📚 المناهج</button>
+                <div id="admin-nav" class="hidden">
+                    <button onclick="navigateTo('students')" class="nav-btn w-full p-4 rounded-2xl text-right transition-all hover:bg-slate-900" id="btn-students">👥 سجل الطلاب</button>
+                </div>
+            </div>
+            <div class="mt-auto border-t border-slate-800 pt-6" id="auth-section">
+                <!-- Will be populated by JS -->
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto" id="main-content">
+            <!-- Content injected here -->
+        </main>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 z-[500] bg-black/70 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md p-8 rounded-[3rem] shadow-2xl">
+            <h2 class="text-2xl font-black text-center mb-6 text-slate-800">أهلاً بك في عالم التميز</h2>
+            <form id="login-form" class="flex flex-col gap-4">
+                <input type="text" id="login-name" placeholder="الاسم رباعي" required class="p-4 bg-gray-50 border rounded-2xl font-bold outline-none">
+                <select id="login-grade" required class="p-4 bg-gray-50 border rounded-2xl font-bold text-slate-600 outline-none">
+                    <option value="">اختر صفك الدراسي</option>
+                    <option value="الأول الإعدادي">الأول الإعدادي</option>
+                    <option value="الثاني الإعدادي">الثاني الإعدادي</option>
+                    <option value="الثالث الإعدادي">الثالث الإعدادي</option>
+                    <option value="تأسيس">كورس التأسيس</option>
+                </select>
+                <input type="email" id="login-email" placeholder="البريد الإلكتروني" required class="p-4 bg-gray-50 border rounded-2xl font-bold outline-none">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="tel" id="login-phone" placeholder="رقم الموبايل" required maxLength="11" class="p-4 bg-gray-50 border rounded-2xl text-center font-bold outline-none">
+                    <input type="tel" id="login-parent" placeholder="رقم ولي الأمر" required maxLength="11" class="p-4 bg-gray-50 border rounded-2xl text-center font-bold outline-none">
+                </div>
+                <button type="submit" class="bg-blue-600 text-white p-5 rounded-2xl font-black mt-2 shadow-xl hover:bg-blue-700">ابدأ التعلم الآن 🚀</button>
+                <button type="button" onclick="closeLogin()" class="text-slate-400 text-sm font-bold mt-2 text-center">رجوع</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="admin-modal" class="fixed inset-0 z-[600] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl p-8 rounded-[3rem] shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <h3 class="text-2xl font-black mb-2 text-slate-800">تعديل محتوى الكورس 🛠️</h3>
+            <div id="admin-form-content" class="flex-1 overflow-y-auto space-y-6 px-1">
+                <!-- Dynamic Admin Form -->
+            </div>
+            <div class="flex gap-3 pt-6 border-t mt-4">
+                <button onclick="saveCourse()" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-black shadow-xl">حفظ التعديلات</button>
+                <button onclick="closeAdmin()" class="px-6 bg-gray-100 text-slate-600 p-4 rounded-2xl font-black">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        // --- Configuration ---
+        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = window.__app_id || 'hassan-bahre-edu';
+
+        const ADMINS = [
+            { name: "إبراهيم حسن عبدالرحمن", phone: "01285304740" },
+            { name: "حسن عبدالرحمن اسماعيل", phone: "01110922801" }
+        ];
+
+        let currentUser = null;
+        let coursesData = {};
+        let activeView = 'home';
+        let currentEditingCourseId = null;
+
+        // --- App Logic ---
+
+        window.showToast = (msg) => {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        };
+
+        window.navigateTo = (view) => {
+            activeView = view;
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('bg-blue-600'));
+            document.getElementById(btn-${view === 'students' ? 'students' : view})?.classList.add('bg-blue-600');
+            render();
+        };
+
+        const render = () => {
+            const main = document.getElementById('main-content');
+            if (activeView === 'home') {
+                main.innerHTML = `
+                    <div class="max-w-6xl mx-auto">
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-10 rounded-[3rem] text-white mb-10 shadow-2xl relative overflow-hidden">
+                           <h2 class="text-4xl font-black mb-4">جاهز للتقفيل؟ 🚀</h2>
+                           <p class="text-blue-100 font-bold">المكان الأول للتميز في الرياضيات.</p>
+                        </div>
+                        <h3 class="text-2xl font-black mb-6 text-slate-800">الكورسات التأسيسية</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            ${renderCourseCard('fd')}
+                        </div>
+                    </div>
+                `;
+            } else if (activeView === 'courses') {
+                main.innerHTML = `
+                    <div class="max-w-6xl mx-auto">
+                        <h2 class="text-3xl font-black mb-8 text-slate-800">اختر مرحلتك الدراسية 🎓</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            ${renderCourseCard('prep1')}
+                            ${renderCourseCard('prep2')}
+                            ${renderCourseCard('prep3')}
+                        </div>
+                    </div>
+                `;
+            } else if (activeView === 'students' && currentUser?.isAdmin) {
+                // Students table logic
+                main.innerHTML = <div class="p-10 text-center font-bold">جاري تحميل سجل الطلاب...</div>;
+                fetchStudents();
+            }
+        };
+
+        const renderCourseCard = (id) => {
+            const c = coursesData[id] || { title: 'جاري التحميل...', img: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?q=80&w=400' };
+            return `
+                <div class="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all relative group h-full flex flex-col">
+                    ${currentUser?.isAdmin ? <button onclick="event.stopPropagation(); openAdmin('${id}')" class="absolute top-5 left-5 z-20 bg-white/95 px-3 py-1.5 rounded-xl shadow-lg text-blue-600 font-black text-[10px]">✏️ تعديل</button> : ''}
+                    <div class="h-52 overflow-hidden relative cursor-pointer" onclick="openCourse('${id}')">
+                        <img src="${c.img || 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?q=80&w=400'}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col justify-between">
+                        <h3 class="font-black text-xl mb-4 text-slate-800">${c.title}</h3>
+                        <button onclick="openCourse('${id}')" class="w-full bg-slate-950 text-white p-4 rounded-2xl font-black group-hover:bg-blue-600 transition-all">دخول المنهج</button>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.openCourse = (id) => {
+            if (!currentUser?.displayName) { document.getElementById('login-modal').classList.remove('hidden'); return; }
+            if (!currentUser.isActive && !currentUser.isAdmin) { showToast("حسابك قيد المراجعة.. المستر بيحبك ❤️"); return; }
+            
+            const c = coursesData[id];
+            const lessons = c?.lessons || [];
+            const main = document.getElementById('main-content');
+            
+            main.innerHTML = `
+                <div class="max-w-5xl mx-auto">
+                    <button onclick="navigateTo('courses')" class="mb-6 text-blue-600 font-bold">← العودة</button>
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border">
+                        <h2 class="text-2xl font-black mb-6" id="lesson-title">${lessons[0]?.name || 'لا توجد دروس'}</h2>
+                        <div class="aspect-video bg-black rounded-3xl overflow-hidden mb-8">
+                            <iframe id="video-frame" src="${lessons[0]?.url || ''}" class="w-full h-full" allowFullScreen></iframe>
+                        </div>
+                        <div class="border-t pt-8">
+                            <h4 class="font-black mb-4">📑 قائمة الدروس:</h4>
+                            <div class="grid grid-cols-1 gap-3">
+                                ${lessons.map((l, i) => `
+                                    <button onclick="playLesson('${l.name}', '${l.url}')" class="p-5 rounded-2xl text-right bg-gray-50 hover:bg-gray-100 font-bold flex justify-between">
+                                        <span>${i + 1}. ${l.name}</span>
+                                        <span class="text-xs text-blue-600">مشاهدة</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.playLesson = (name, url) => {
+            document.getElementById('lesson-title').innerText = name;
+            document.getElementById('video-frame').src = url;
+            window.scrollTo(0,0);
+        };
+
+        // --- Admin Logic ---
+        window.openAdmin = (id) => {
+            currentEditingCourseId = id;
+            const c = coursesData[id] || { title: '', lessons: [] };
+            const container = document.getElementById('admin-form-content');
+            container.innerHTML = `
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500">اسم الكورس</label>
+                    <input id="edit-title" class="w-full p-4 bg-gray-50 border rounded-2xl font-bold" value="${c.title}">
+                </div>
+                <div id="lessons-list" class="space-y-4 pt-4 border-t">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-black text-blue-600">الدروس:</h4>
+                        <button onclick="addLessonRow()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">+ إضافة</button>
+                    </div>
+                    ${(c.lessons || []).map((l, i) => renderLessonRow(l.name, l.url, i)).join('')}
+                </div>
+            `;
+            document.getElementById('admin-modal').classList.remove('hidden');
+        };
+
+        window.addLessonRow = () => {
+            const div = document.createElement('div');
+            div.innerHTML = renderLessonRow('', '', Date.now());
+            document.getElementById('lessons-list').appendChild(div);
+        };
+
+        const renderLessonRow = (name, url, i) => `
+            <div class="lesson-row p-4 bg-slate-50 rounded-2xl border relative space-y-2 mb-2">
+                <input placeholder="اسم الدرس" class="lesson-name w-full p-3 border rounded-xl font-bold" value="${name}">
+                <input placeholder="رابط يوتيوب" class="lesson-url w-full p-3 border rounded-xl text-xs" value="${url}">
+            </div>
+        `;
+
+        window.saveCourse = async () => {
+            const title = document.getElementById('edit-title').value;
+            const rows = document.querySelectorAll('.lesson-row');
+            const lessons = Array.from(rows).map(r => ({
+                name: r.querySelector('.lesson-name').value,
+                url: formatYoutubeUrl(r.querySelector('.lesson-url').value)
+            })).filter(l => l.name && l.url);
+
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', currentEditingCourseId), {
+                    title, lessons, img: coursesData[currentEditingCourseId]?.img || ''
+                }, { merge: true });
+                closeAdmin();
+                showToast("تم الحفظ بنجاح ✅");
+            } catch (e) { showToast("خطأ في الحفظ"); }
+        };
+
+        const formatYoutubeUrl = (url) => {
+            if (!url || url.includes('embed')) return url;
+            let vid = "";
+            if (url.includes('youtu.be/')) vid = url.split('/').pop().split('?')[0];
+            else if (url.includes('watch?v=')) vid = url.split('v=')[1].split('&')[0];
+            return vid ? https://www.youtube.com/embed/${vid} : url;
+        };
+
+        window.closeAdmin = () => document.getElementById('admin-modal').classList.add('hidden');
+        window.closeLogin = () => document.getElementById('login-modal').classList.add('hidden');
+
+        // --- Auth & Init ---
+        const updateAuthUI = () => {
+            const section = document.getElementById('auth-section');
+            const adminNav = document.getElementById('admin-nav');
+            if (currentUser?.displayName) {
+                section.innerHTML = `
+                    <div class="text-center">
+                        <p class="text-xs text-blue-400 mb-2 font-bold">يا ${currentUser.displayName.split(' ')[0]}</p>
+                        <button onclick="logout()" class="text-red-400 text-xs font-bold">تسجيل الخروج</button>
+                    </div>
+                `;
+                if (currentUser.isAdmin) adminNav.classList.remove('hidden');
+            } else {
+                section.innerHTML = <button onclick="document.getElementById('login-modal').classList.remove('hidden')" class="w-full bg-blue-600 p-4 rounded-2xl font-black">تسجيل دخول</button>;
+                adminNav.classList.add('hidden');
+            }
+        };
+
+        window.logout = () => {
+            localStorage.removeItem('hassan_profile');
+            location.reload();
+        };
+
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                fullName: document.getElementById('login-name').value,
+                grade: document.getElementById('login-grade').value,
+                studentPhone: document.getElementById('login-phone').value,
+                parentPhone: document.getElementById('login-parent').value,
+                email: document.getElementById('login-email').value,
+            };
+
+            const isAdmin = ADMINS.some(a => a.name === data.fullName && a.phone === data.studentPhone);
+            const profile = { ...data, displayName: data.fullName, isAdmin, isActive: isAdmin };
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', data.studentPhone), {
+                ...profile, lastLogin: new Date().toISOString()
+            }, { merge: true });
+
+            localStorage.setItem('hassan_profile', JSON.stringify(profile));
+            currentUser = profile;
+            updateAuthUI();
+            closeLogin();
+            render();
+            showToast(isAdmin ? "أهلاً يا عبقري.. المستر بيحبك 💙" : "بالتوفيق يا بطل 🚀");
+        };
+
+        // --- Start ---
+        onAuthStateChanged(auth, (user) => {
+            const saved = localStorage.getItem('hassan_profile');
+            if (saved) currentUser = JSON.parse(saved);
+            updateAuthUI();
+            document.getElementById('loading-screen').classList.add('hidden');
+            render();
+        });
+
+        // Load Courses
+        onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), (snap) => {
+            snap.forEach(doc => { coursesData[doc.id] = doc.data(); });
+            render();
+        });
+
+        // Initialize view
+        navigateTo('home');
+
+    </script>
+</body>
+</html>
